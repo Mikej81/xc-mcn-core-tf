@@ -1,0 +1,13 @@
+# Copy this file to ce-sites_override.tf for local development.
+# Override files (*_override.tf) are gitignored and let you point
+# module sources at local paths without modifying the committed code.
+#
+# After copying, run: terraform init -upgrade
+
+module "aws_ce" {
+  source = "../xc-ce-aws-gov-tf"
+}
+
+module "azure_ce" {
+  source = "../xc-ce-azure-gov-tf"
+}

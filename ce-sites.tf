@@ -4,7 +4,7 @@
 
 module "aws_ce" {
   count  = var.aws_ce != null ? 1 : 0
-  source = "../xc-ce-aws-gov-tf"
+  source = "git::https://github.com/Mikej81/xc-ce-aws-gov-tf.git?ref=main"
 
   f5xc_api_url      = var.f5xc_api_url
   f5xc_api_p12_file = var.f5xc_api_p12_file
@@ -48,7 +48,7 @@ module "aws_ce" {
 
 module "azure_ce" {
   count  = var.azure_ce != null ? 1 : 0
-  source = "../xc-ce-azure-gov-tf"
+  source = "git::https://github.com/Mikej81/xc-ce-azure-gov-tf.git?ref=main"
 
   f5xc_api_url      = var.f5xc_api_url
   f5xc_api_p12_file = var.f5xc_api_p12_file
@@ -63,6 +63,7 @@ module "azure_ce" {
   outside_subnet_cidr        = var.azure_ce.outside_subnet_cidr
   inside_subnet_name         = var.azure_ce.inside_subnet_name
   inside_subnet_cidr         = var.azure_ce.inside_subnet_cidr
+  image_id                   = var.azure_ce.image_id
   vhd_download_url           = coalesce(var.azure_ce.vhd_download_url, var.ce_image_url)
   vhd_storage_account_name   = var.azure_ce.vhd_storage_account_name
   vhd_storage_container_name = var.azure_ce.vhd_storage_container_name

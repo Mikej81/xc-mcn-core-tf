@@ -117,6 +117,7 @@ variable "azure_ce" {
     outside_subnet_cidr        = optional(string, "10.0.1.0/24")
     inside_subnet_name         = optional(string, null)
     inside_subnet_cidr         = optional(string, "10.0.2.0/24")
+    image_id                   = optional(string, null)
     vhd_download_url           = optional(string, null)
     vhd_storage_account_name   = optional(string, null)
     vhd_storage_container_name = optional(string, "f5xc-ce-images")
