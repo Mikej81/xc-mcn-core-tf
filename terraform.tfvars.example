@@ -1,0 +1,64 @@
+# F5 XC API
+f5xc_api_url      = "https://tenant.console.ves.volterra.io/api"
+f5xc_api_p12_file = "./creds/tenant.console.ves.volterra.io.api-creds.p12"
+
+# Mesh naming (defaults are fine for most deployments)
+# mesh_name             = "global-network-mesh"
+# mesh_description      = "Global full-mesh data-plane connectivity for MCN CE sites"
+
+# Label binding (defaults match mesh_name)
+# site_mesh_label_key   = "site-mesh"
+# site_mesh_label_value = "global-network-mesh"
+
+# CE Image (shared across AWS and Azure, override per-site in the CE object if needed)
+# ce_image_url = "https://vesio.blob.core.windows.net/releases/rhel/9/x86_64/images/securemeshV2/azure/f5xc-ce-9.2024.44-20250102054713.vhd.gz"
+
+# Network Segments
+# segments = {
+#   prod = {
+#     description        = "Production network segment"
+#     internet_connected = false
+#   }
+#   dev = {
+#     description        = "Development network segment"
+#     internet_connected = false
+#   }
+# }
+
+# AWS GovCloud CE (set to null or omit to skip)
+# aws_ce = {
+#   site_name            = "xc-ce-awsgov"
+#   ssh_public_key       = "ssh-rsa AAAA..."
+#   vpc_id               = "vpc-0123456789abcdef0"
+#   outside_subnet_id    = "subnet-0123456789abcdef0"
+#   inside_subnet_id     = "subnet-0123456789abcdef1"
+#   aws_region           = "us-gov-west-1"
+#   aws_profile          = "govcloud"
+#   s3_bucket_name       = "xc-ce-image-staging"
+#   instance_type        = "m5.2xlarge"
+#   disk_size_gb         = 128
+#   create_eip           = true
+#   deploy_test_vm       = true
+#   test_vm_remote_cidrs = ["192.168.2.0/24", "10.0.2.0/24"]
+#   tags = {
+#     owner       = "your-name"
+#     environment = "dev"
+#     project     = "xc-ce-aws-gov"
+#   }
+# }
+
+# Azure GovCloud CE (set to null or omit to skip)
+# azure_ce = {
+#   site_name        = "xc-ce-azgov"
+#   ssh_public_key   = "ssh-rsa AAAA..."
+#   location         = "usgovvirginia"
+#   instance_type    = "Standard_D8s_v4"
+#   os_disk_size_gb  = 128
+#   create_public_ip = true
+#   deploy_test_vm   = true
+#   tags = {
+#     owner       = "your-name"
+#     environment = "dev"
+#     project     = "xc-ce-azure-gov"
+#   }
+# }
