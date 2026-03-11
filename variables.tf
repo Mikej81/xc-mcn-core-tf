@@ -12,6 +12,13 @@ variable "f5xc_api_p12_file" {
   description = "Path to the F5 XC API P12 credential file"
 }
 
+variable "f5xc_api_token" {
+  type        = string
+  description = "F5 XC API token for Day-2 provisioners (set public IP, configure segments). If provided, used instead of P12 for API calls."
+  default     = null
+  sensitive   = true
+}
+
 # --------------------------------------------------------------------------
 # Naming
 # --------------------------------------------------------------------------
@@ -94,6 +101,7 @@ variable "aws_ce" {
     test_vm_instance_type = optional(string, "t3.micro")
     test_vm_private_ip    = optional(string, null)
     test_vm_remote_cidrs  = optional(list(string), [])
+    segment_name          = optional(string, null)
     tags                  = optional(map(string), {})
   })
   default     = null
@@ -131,6 +139,7 @@ variable "azure_ce" {
     create_public_ip           = optional(bool, true)
     deploy_test_vm             = optional(bool, false)
     test_vm_size               = optional(string, "Standard_B2s")
+    segment_name               = optional(string, null)
     tags                       = optional(map(string), {})
   })
   default     = null

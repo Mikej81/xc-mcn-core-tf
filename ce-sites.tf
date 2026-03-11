@@ -8,6 +8,7 @@ module "aws_ce" {
 
   f5xc_api_url      = var.f5xc_api_url
   f5xc_api_p12_file = var.f5xc_api_p12_file
+  f5xc_api_token    = var.f5xc_api_token
 
   site_name             = var.aws_ce.site_name
   ssh_public_key        = var.aws_ce.ssh_public_key
@@ -30,6 +31,7 @@ module "aws_ce" {
   test_vm_instance_type = var.aws_ce.test_vm_instance_type
   test_vm_private_ip    = var.aws_ce.test_vm_private_ip
   test_vm_remote_cidrs  = var.aws_ce.test_vm_remote_cidrs
+  segment_name          = var.aws_ce.segment_name
   tags                  = var.aws_ce.tags
 
   # MCN integration — from core config
@@ -52,6 +54,7 @@ module "azure_ce" {
 
   f5xc_api_url      = var.f5xc_api_url
   f5xc_api_p12_file = var.f5xc_api_p12_file
+  f5xc_api_token    = var.f5xc_api_token
 
   site_name                  = var.azure_ce.site_name
   ssh_public_key             = var.azure_ce.ssh_public_key
@@ -77,6 +80,7 @@ module "azure_ce" {
   create_public_ip           = var.azure_ce.create_public_ip
   deploy_test_vm             = var.azure_ce.deploy_test_vm
   test_vm_size               = var.azure_ce.test_vm_size
+  segment_name               = var.azure_ce.segment_name
   tags                       = var.azure_ce.tags
 
   # MCN integration — from core config
