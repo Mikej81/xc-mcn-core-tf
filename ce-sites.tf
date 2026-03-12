@@ -80,6 +80,7 @@ module "azure_ce" {
   create_public_ip           = var.azure_ce.create_public_ip
   deploy_test_vm             = var.azure_ce.deploy_test_vm
   test_vm_size               = var.azure_ce.test_vm_size
+  test_vm_remote_cidrs       = var.azure_ce.test_vm_remote_cidrs
   segment_name               = var.azure_ce.segment_name
   tags                       = var.azure_ce.tags
 

@@ -139,6 +139,7 @@ variable "azure_ce" {
     create_public_ip           = optional(bool, true)
     deploy_test_vm             = optional(bool, false)
     test_vm_size               = optional(string, "Standard_B2s")
+    test_vm_remote_cidrs       = optional(list(string), [])
     segment_name               = optional(string, null)
     tags                       = optional(map(string), {})
   })
