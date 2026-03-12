@@ -60,6 +60,17 @@ For more on these concepts, see the [F5 XC Site documentation](https://docs.clou
 4. Save the `.p12` file to `./creds/` (this directory is gitignored)
 5. Note the password -export it as `VES_P12_PASSWORD` environment variable
 
+### F5 XC API Token (Optional)
+
+An API token can be provided for Day-2 provisioners that configure segment interfaces and site-to-site connectivity after CE registration. API tokens are preferred over P12 certificates for API calls because they avoid OpenSSL extraction overhead and legacy provider quirks.
+
+1. Log into your F5 XC Console
+2. Navigate to **Administration > Credentials**
+3. Create an **API Token**
+4. Set the `f5xc_api_token` variable in your `terraform.tfvars`
+
+If no token is provided, the provisioners fall back to extracting credentials from the P12 certificate using OpenSSL with the legacy provider enabled.
+
 ### Cloud Provider Authentication
 
 **AWS GovCloud** (if deploying `aws_ce`):
@@ -84,6 +95,9 @@ Edit `terraform.tfvars` with your values:
 # Required -F5 XC API
 f5xc_api_url      = "https://<tenant>.console.ves.volterra.io/api"
 f5xc_api_p12_file = "./creds/<tenant>.api-creds.p12"
+
+# Optional -API token for Day-2 provisioners (preferred over P12 for API calls)
+# f5xc_api_token = "your-api-token"
 ```
 
 ### 2. Deploy Core Objects Only
@@ -105,12 +119,14 @@ Add CE site configurations to `terraform.tfvars`:
 # Azure GovCloud CE
 azure_ce = {
   site_name      = "mcn-azure-gov-ce"
+  segment_name   = "prod"
   ssh_public_key = "ssh-rsa AAAA..."
 }
 
 # AWS GovCloud CE
 aws_ce = {
   site_name         = "mcn-aws-gov-ce"
+  segment_name      = "prod"
   ssh_public_key    = "ssh-rsa AAAA..."
   vpc_id            = "vpc-0123456789abcdef0"
   outside_subnet_id = "subnet-0123456789abcdef0"
@@ -155,7 +171,22 @@ curl -s -H "Authorization: APIToken <token>" \
 
 Network segments are created by this module but **segment interfaces on CE sites must be configured after the site is ONLINE**. This assigns the SLI (inside) interface to a [network segment](https://docs.cloud.f5.com/docs-v2/multi-cloud-network-connect/how-tos/networking/segmentation), enabling cross-site segment routing over the mesh.
 
-#### Option A: XC Console (UI)
+#### Automated Day-2 Provisioners
+
+When deploying CE sites through the included CE modules, public IP assignment, segment interface configuration, and site-to-site connectivity are handled automatically by `terraform_data` provisioners that run after the CE registers. No manual steps are required for the common case.
+
+The provisioners perform the following:
+
+- **Wait for ONLINE** -poll the site status until it reaches `ONLINE` state (up to 60 minutes)
+- **Set public IP** -assign the public IP on the node (when `create_eip` / `create_public_ip` is true)
+- **Configure segment interface** -set the network segment on the SLI interface (when `segment_name` is set)
+- **Enable site-to-site** -enable site-to-site connectivity on the SLI interface
+- **Retry on conflicts** -automatically retry on `resource_version` conflicts, which are common because the CE updates the site object frequently during registration
+- **Authentication** -prefers the API token (`f5xc_api_token`) when set; falls back to extracting credentials from the P12 certificate using OpenSSL with the legacy provider enabled
+
+If you are not using the CE modules, or need to troubleshoot a provisioner failure, you can perform the same steps manually using the options below.
+
+#### Manual Alternative -Option A: XC Console (UI)
 
 1. Navigate to **Multi-Cloud Network Connect > Manage > Site Management > [Secure Mesh Sites v2](https://docs.cloud.f5.com/docs-v2/multi-cloud-network-connect/how-to/site-management/create-secure-mesh-site-v2)**
 2. Find your site and click **Edit**
@@ -165,7 +196,7 @@ Network segments are created by this module but **segment interfaces on CE sites
 6. Select the target segment (e.g. `prod`)
 7. Click **Save and Exit**
 
-#### Option B: XC API
+#### Manual Alternative -Option B: XC API
 
 First, GET the current site config to capture the auto-discovered node name and existing spec:
 
@@ -251,6 +282,8 @@ Once segment interfaces are configured on both CE sites, verify end-to-end segme
 | `site_mesh_label_key` | no | `site-mesh` | Label key for CE site selection |
 | `site_mesh_label_value` | no | `global-network-mesh` | Label value for mesh membership |
 | `segments` | no | `{ prod = {...} }` | Map of network segments to create |
+| `f5xc_api_token` | no | `null` | F5 XC API token for Day-2 provisioners (preferred over P12 for API calls) |
+| `ce_image_url` | no | (has a default) | CE image download URL shared across AWS and Azure deployments |
 | `aws_ce` | no | `null` | AWS GovCloud CE config object (null = skip) |
 | `azure_ce` | no | `null` | Azure GovCloud CE config object (null = skip) |
 
