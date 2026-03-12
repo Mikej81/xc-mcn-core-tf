@@ -48,15 +48,66 @@ An API token can be provided for Day-2 provisioners that configure segment inter
 
 If no token is provided, the provisioners fall back to extracting credentials from the P12 certificate using OpenSSL with the legacy provider enabled.
 
-### Cloud Provider Authentication
+### AWS GovCloud Authentication (if deploying `aws_ce`)
 
-**AWS GovCloud** (if deploying `aws_ce`):
-- AWS CLI configured with a GovCloud profile
-- IAM permissions for EC2, S3, VPC, IAM (vmimport role)
+Configure AWS credentials using any method supported by the [AWS provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration): CLI profile, environment variables, SSO, or instance role.
 
-**Azure Government** (if deploying `azure_ce`):
-- Azure CLI authenticated to an Azure Government subscription (`az cloud set --name AzureUSGovernment && az login`)
-- Contributor role on the target subscription
+```bash
+# Option A: Named profile (recommended)
+export AWS_PROFILE="your-govcloud-profile"
+export AWS_REGION="us-gov-west-1"
+
+# Option B: Access keys
+export AWS_ACCESS_KEY_ID="AKIA..."
+export AWS_SECRET_ACCESS_KEY="..."
+export AWS_REGION="us-gov-west-1"
+```
+
+Set `aws_profile` in `terraform.tfvars` to match your profile name, or leave it `null` to use the default credential chain.
+
+**Required IAM permissions:**
+
+| Permission | Purpose |
+|---|---|
+| EC2 (full) | Launch CE instance, manage ENIs, EIPs, security groups, key pairs, route tables |
+| S3 (read/write) | Stage CE image for import (only if using `ce_image_download_url`) |
+| IAM (limited) | Create `vmimport` service role and CE instance profile |
+
+### Azure Government Authentication (if deploying `azure_ce`)
+
+The [AzureRM provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs) requires a Service Principal with Contributor access.
+
+**Option A: Create a new Service Principal**
+
+```bash
+az cloud set --name AzureUSGovernment
+az login
+
+# Create SP with Contributor role on the target subscription
+az ad sp create-for-rbac --name "terraform-xc-mcn" --role Contributor \
+  --scopes /subscriptions/<subscription-id>
+```
+
+**Option B: Use an existing Service Principal**
+
+```bash
+az cloud set --name AzureUSGovernment
+az login
+
+export ARM_CLIENT_ID="<service-principal-app-id>"
+export ARM_CLIENT_SECRET="<service-principal-password>"
+export ARM_TENANT_ID="<azure-ad-tenant-id>"
+export ARM_SUBSCRIPTION_ID="<subscription-id>"
+export ARM_ENVIRONMENT="usgovernment"
+```
+
+**Required RBAC:**
+
+| Role | Scope | Purpose |
+|---|---|---|
+| **Contributor** | Subscription or Resource Group | Create/manage VMs, NICs, NSGs, storage accounts, images, and list storage account keys for VHD upload |
+
+> **Note:** If deploying into an existing resource group, Contributor can be scoped to that resource group instead of the full subscription.
 
 ## Usage
 
