@@ -16,29 +16,6 @@ This module creates a **full mesh** with **data-plane only** connectivity -meani
 
 Segments are assigned to the SLI (inside) interface of each CE node. This is a [Day-2 operation](#1-segment-interface-configuration) because the XC API does not allow interface configuration until after the CE registers and its nodes are auto-discovered.
 
-### How They Work Together
-
-```mermaid
-flowchart TD
-    L["Known Label<br/><i>shared namespace</i>"]
-    VS["Virtual Site<br/><i>shared namespace</i><br/>selects CEs by label"]
-    SMG["Site Mesh Group<br/><i>system namespace</i><br/>data-plane tunnels between sites"]
-    SEG["Network Segment<br/><i>system namespace</i><br/>isolated traffic on SLI"]
-
-    L --> VS --> SMG --> SEG
-
-    CE1["AWS CE Site<br/><code>site-mesh = global-network-mesh</code>"]
-    CE2["Azure CE Site<br/><code>site-mesh = global-network-mesh</code>"]
-
-    CE1 -. "label match" .-> VS
-    CE2 -. "label match" .-> VS
-    CE1 <-- "IPsec / SSL tunnel" --> CE2
-```
-
-Each CE site carries a label (e.g. `site-mesh = global-network-mesh`). The virtual site selects all CEs with that label. The site mesh group references the virtual site to form tunnels. Segments then ride over those tunnels to provide isolated connectivity between the inside networks.
-
-For more on these concepts, see the [F5 XC Site documentation](https://docs.cloud.f5.com/docs-v2/platform/concepts/site) and [Networking concepts](https://docs.cloud.f5.com/docs-v2/platform/concepts/networking).
-
 ## What This Deploys
 
 ### Shared XC Objects (always created)
