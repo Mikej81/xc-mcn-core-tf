@@ -95,7 +95,7 @@ An API token is used by the Day-2 provisioners that automatically configure segm
 Each CE site requires an SSH public key for admin access. If you do not already have one, generate a key pair:
 
 ```bash
-ssh-keygen -t ed25519 -C "your-email@example.com" -f ~/.ssh/xc-ce-key
+ssh-keygen -t rsa -b 4096 -C "your-email@example.com" -f ~/.ssh/xc-ce-key
 ```
 
 This creates two files:
