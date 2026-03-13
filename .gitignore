@@ -17,3 +17,7 @@ override.tf.json
 # Credentials
 creds/
 *.p12
+.env.aws
+
+# Cached CE image
+.ce-image-cache/

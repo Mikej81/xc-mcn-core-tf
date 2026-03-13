@@ -4,7 +4,8 @@
 
 module "aws_ce" {
   count  = var.aws_ce != null ? 1 : 0
-  source = "git::https://github.com/Mikej81/xc-ce-aws-gov-tf.git?ref=main"
+  # source = "git::https://github.com/Mikej81/xc-ce-aws-gov-tf.git?ref=main"
+  source = "../xc-ce-aws-gov-tf"
 
   f5xc_api_url      = var.f5xc_api_url
   f5xc_api_p12_file = var.f5xc_api_p12_file
@@ -23,6 +24,7 @@ module "aws_ce" {
   aws_profile           = var.aws_ce.aws_profile
   ami_id                = var.aws_ce.ami_id
   ce_image_download_url = coalesce(var.aws_ce.ce_image_download_url, var.ce_image_url)
+  ce_image_file         = local.ce_image_file
   s3_bucket_name        = var.aws_ce.s3_bucket_name
   instance_type         = var.aws_ce.instance_type
   disk_size_gb          = var.aws_ce.disk_size_gb
@@ -45,6 +47,7 @@ module "aws_ce" {
   depends_on = [
     volterra_virtual_site.mesh,
     volterra_site_mesh_group.mesh,
+    terraform_data.ce_image_download,
   ]
 }
 
@@ -54,7 +57,8 @@ module "aws_ce" {
 
 module "azure_ce" {
   count  = var.azure_ce != null ? 1 : 0
-  source = "git::https://github.com/Mikej81/xc-ce-azure-gov-tf.git?ref=main"
+  # source = "git::https://github.com/Mikej81/xc-ce-azure-gov-tf.git?ref=main"
+  source = "../xc-ce-azure-gov-tf"
 
   f5xc_api_url      = var.f5xc_api_url
   f5xc_api_p12_file = var.f5xc_api_p12_file
@@ -72,6 +76,7 @@ module "azure_ce" {
   inside_subnet_cidr         = var.azure_ce.inside_subnet_cidr
   image_id                   = var.azure_ce.image_id
   vhd_download_url           = coalesce(var.azure_ce.vhd_download_url, var.ce_image_url)
+  ce_image_file              = local.ce_image_file
   vhd_storage_account_name   = var.azure_ce.vhd_storage_account_name
   vhd_storage_container_name = var.azure_ce.vhd_storage_container_name
   vhd_blob_name              = var.azure_ce.vhd_blob_name
@@ -95,5 +100,6 @@ module "azure_ce" {
   depends_on = [
     volterra_virtual_site.mesh,
     volterra_site_mesh_group.mesh,
+    terraform_data.ce_image_download,
   ]
 }
