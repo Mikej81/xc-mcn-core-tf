@@ -141,22 +141,7 @@ Leave `aws_profile` as `null` in `terraform.tfvars` to use the default credentia
 | S3 (read/write) | Stage CE image for import (only if using `ce_image_download_url`) |
 | IAM (limited) | Create `vmimport` service role and CE instance profile |
 
-**Finding your VPC and subnet IDs:**
-
-The AWS CE deploys into an *existing* VPC with two subnets. To find these IDs:
-
-```bash
-# List VPCs
-aws ec2 describe-vpcs --query 'Vpcs[].{ID:VpcId, CIDR:CidrBlock, Name:Tags[?Key==`Name`].Value | [0]}' --output table
-
-# List subnets in a VPC
-aws ec2 describe-subnets --filters "Name=vpc-id,Values=vpc-XXXX" \
-  --query 'Subnets[].{ID:SubnetId, AZ:AvailabilityZone, CIDR:CidrBlock, Name:Tags[?Key==`Name`].Value | [0]}' --output table
-```
-
-You need two subnets:
-- **Outside (SLO)** — must have a route to the internet (via an Internet Gateway). This is used for CE registration and tunnel traffic.
-- **Inside (SLI)** — your private workload subnet. The CE will be the default gateway for this subnet.
+The AWS CE can **create its own** VPC and subnets (greenfield), or deploy into existing networking (brownfield). See [Networking and Route Tables](#networking-and-route-tables) for important details about how the CE interacts with your infrastructure.
 
 ### Azure Government Authentication (if deploying `azure_ce`)
 
@@ -196,7 +181,7 @@ If you already have credentials, set the same `ARM_*` environment variables show
 
 > **Note:** If deploying into an existing resource group, Contributor can be scoped to that resource group instead of the full subscription.
 
-Unlike the AWS CE (which requires existing networking), the Azure CE can **create its own** resource group, VNet, and subnets if you leave the optional `resource_group_name`, `vnet_name`, `outside_subnet_name`, and `inside_subnet_name` fields unset.
+The Azure CE can **create its own** resource group, VNet, and subnets (greenfield), or deploy into existing networking (brownfield). See [Networking and Route Tables](#networking-and-route-tables) for important details about how the CE interacts with your infrastructure.
 
 ## Usage
 
@@ -254,58 +239,168 @@ terraform apply
 
 To deploy CE sites alongside the core objects, add a CE configuration block to your `terraform.tfvars`. Only the fields you need are required — everything else has sensible defaults.
 
-**AWS GovCloud CE example:**
+Before configuring your CE sites, read the [Networking and Route Tables](#networking-and-route-tables) section to understand how the CE interacts with your cloud networking, especially if you have existing infrastructure.
+
+#### AWS GovCloud CE
+
+The AWS CE supports two deployment modes:
+
+**Greenfield (new infrastructure)** — Terraform creates a new VPC, subnets, internet gateway, and route tables. This is the simplest option and safe for existing infrastructure because nothing is shared:
 
 ```hcl
 aws_ce = {
   # Required fields
-  site_name         = "mcn-aws-gov-ce"        # Name for this site in F5 XC (letters, numbers, hyphens)
-  ssh_public_key    = "ssh-rsa AAAA..."        # Contents of ~/.ssh/xc-ce-key.pub
-  vpc_id            = "vpc-0123456789abcdef0"  # Your existing VPC ID
-  outside_subnet_id = "subnet-0123456789abcdef0"  # SLO subnet (must have internet access)
-  inside_subnet_id  = "subnet-0123456789abcdef1"  # SLI subnet (private workloads)
+  site_name      = "mcn-aws-gov-ce"
+  ssh_public_key = "ssh-rsa AAAA..."
+
+  # Greenfield: Terraform creates all networking for you.
+  # These defaults are used if you don't provide vpc_id / subnet IDs:
+  #   vpc_cidr            = "192.168.0.0/16"
+  #   outside_subnet_cidr = "192.168.1.0/24"
+  #   inside_subnet_cidr  = "192.168.2.0/24"
 
   # Required for AWS authentication
   aws_region  = "us-gov-west-1"
-  aws_profile = "govcloud"                     # Must match your AWS CLI profile name
+  aws_profile = "govcloud"       # Must match your AWS CLI profile name
 
   # Connect this site's inside network to the "prod" segment.
   # This value must match a key in the "segments" variable (default: "prod").
   segment_name = "prod"
 
+  # S3 bucket for staging the CE image import (required for image import)
+  s3_bucket_name = "my-ce-image-staging"
+
   # Optional: deploy a small test VM on the inside subnet for connectivity testing
   deploy_test_vm       = true
-  test_vm_remote_cidrs = ["10.0.2.0/24"]       # Remote CIDRs to route via the CE (e.g. Azure SLI subnet)
+  test_vm_remote_cidrs = ["10.0.2.0/24"]   # Remote CIDRs to route via the CE (e.g. Azure SLI subnet)
 }
 ```
 
-**Azure GovCloud CE example:**
+**Brownfield (existing infrastructure)** — deploy into an existing VPC and subnets by providing their IDs:
+
+```hcl
+aws_ce = {
+  site_name      = "mcn-aws-gov-ce"
+  ssh_public_key = "ssh-rsa AAAA..."
+
+  # Brownfield: reference existing AWS resources by ID.
+  vpc_id            = "vpc-0123456789abcdef0"
+  outside_subnet_id = "subnet-0123456789abcdef0"  # SLO subnet (must have internet access)
+  inside_subnet_id  = "subnet-0123456789abcdef1"  # SLI subnet (dedicated for CE recommended)
+
+  aws_region  = "us-gov-west-1"
+  aws_profile = "govcloud"
+
+  segment_name = "prod"
+}
+```
+
+To find your existing VPC and subnet IDs:
+
+```bash
+# List VPCs in your GovCloud account
+aws ec2 describe-vpcs \
+  --query 'Vpcs[].{ID:VpcId, CIDR:CidrBlock, Name:Tags[?Key==`Name`].Value | [0]}' \
+  --output table
+
+# List subnets in a specific VPC (replace vpc-XXXX with your VPC ID)
+aws ec2 describe-subnets --filters "Name=vpc-id,Values=vpc-XXXX" \
+  --query 'Subnets[].{ID:SubnetId, AZ:AvailabilityZone, CIDR:CidrBlock, Name:Tags[?Key==`Name`].Value | [0]}' \
+  --output table
+```
+
+You need two subnets:
+
+- **Outside (SLO)** — must have a route to the internet (via an Internet Gateway). Used for CE registration and tunnel traffic to other sites.
+- **Inside (SLI)** — your private workload subnet. Traffic on this subnet will be routed through the CE for cross-site connectivity.
+
+> **Important:** When using existing subnets, it is strongly recommended to use a **dedicated SLI subnet** for the CE. The CE module adds a default route (`0.0.0.0/0 → CE`) to the inside subnet's existing route table, which changes the default gateway for all resources on that subnet. See [Networking and Route Tables](#networking-and-route-tables) for details.
+
+#### Azure GovCloud CE
+
+The Azure CE supports two deployment modes:
+
+**Greenfield (new infrastructure)** — Terraform creates a new resource group, VNet, and subnets. This is the simplest option and is safe for existing infrastructure because nothing is shared:
 
 ```hcl
 azure_ce = {
   # Required fields
-  site_name      = "mcn-azure-gov-ce"          # Name for this site in F5 XC
-  ssh_public_key = "ssh-rsa AAAA..."           # Contents of ~/.ssh/xc-ce-key.pub
+  site_name      = "mcn-azure-gov-ce"
+  ssh_public_key = "ssh-rsa AAAA..."
+
+  # Greenfield: Terraform creates all networking for you.
+  # These defaults are used if you don't specify existing resources:
+  #   vnet_address_space  = "10.0.0.0/16"
+  #   outside_subnet_cidr = "10.0.1.0/24"
+  #   inside_subnet_cidr  = "10.0.2.0/24"
 
   # Connect this site's inside network to the "prod" segment.
   segment_name = "prod"
 
   # Optional: deploy a small test VM on the inside subnet for connectivity testing
   deploy_test_vm       = true
-  test_vm_remote_cidrs = ["172.16.2.0/24"]     # Remote CIDRs to route via the CE (e.g. AWS SLI subnet)
+  test_vm_remote_cidrs = ["172.16.2.0/24"]   # Remote CIDRs to route via the CE (e.g. AWS SLI subnet)
 }
 ```
 
-> **Note:** The Azure CE creates its own resource group, VNet, and subnets by default. To deploy into existing networking, set `resource_group_name`, `vnet_name`, `outside_subnet_name`, and `inside_subnet_name`.
+**Brownfield (existing infrastructure)** — deploy into an existing resource group, VNet, and subnets by providing their names:
+
+```hcl
+azure_ce = {
+  site_name      = "mcn-azure-gov-ce"
+  ssh_public_key = "ssh-rsa AAAA..."
+
+  # Brownfield: reference existing Azure resources by name.
+  resource_group_name = "my-existing-rg"
+  vnet_name           = "my-existing-vnet"
+  outside_subnet_name = "slo-subnet"         # Existing subnet with internet access
+  inside_subnet_name  = "sli-subnet"         # Existing subnet for CE inside traffic
+
+  segment_name = "prod"
+}
+```
+
+> **Important:** When using existing subnets, it is strongly recommended to use a **dedicated SLI subnet** for the CE. The CE module creates a new route table with a default route (`0.0.0.0/0 → CE`) and associates it with the inside subnet, **replacing any existing route table association**. This will change routing for all resources on that subnet. See [Networking and Route Tables](#networking-and-route-tables) for details.
 
 Then run:
 
 ```bash
 export VES_P12_PASSWORD="your-p12-password"
 terraform init      # Re-run init if this is your first time deploying CE modules
-terraform plan      # Review what will be created
+terraform plan      # Review what will be created — pay attention to route table changes
 terraform apply     # Deploy (type "yes" to confirm)
 ```
+
+## Networking and Route Tables
+
+Each CE has two network interfaces — **SLO (outside)** facing the internet for tunnel traffic, and **SLI (inside)** facing your private workload network. For segment traffic to flow between sites, workloads on the inside subnet need a route that sends traffic through the CE.
+
+Both CE modules automatically configure a default route (`0.0.0.0/0`) on the inside subnet pointing to the CE's SLI interface as the next hop. This is what enables cross-site and on-prem traffic to flow through the mesh.
+
+### Greenfield Deployments (New Infrastructure)
+
+When the CE modules create new subnets (greenfield), they also create **dedicated route tables** for those subnets. There is no risk to existing infrastructure because nothing is shared.
+
+| Cloud | What's Created |
+|-------|----------------|
+| **AWS** | New VPC, Internet Gateway, SLO subnet + route table (with IGW default route), SLI subnet + route table (with `0.0.0.0/0 → CE SLI ENI`) |
+| **Azure** | New resource group, VNet, SLO subnet, SLI subnet + route table (with `0.0.0.0/0 → CE SLI IP` as VirtualAppliance) |
+
+### Brownfield Deployments (Existing Infrastructure)
+
+When deploying into existing subnets, the CE modules **modify route tables on the inside (SLI) subnet**. This is required for segment traffic, but can affect existing workloads.
+
+| Cloud | What Happens | Risk |
+|-------|-------------|------|
+| **AWS** | Adds a `0.0.0.0/0 → CE SLI ENI` route to the **existing** route table associated with the inside subnet | **High if shared** — changes the default gateway for all resources on that subnet. Existing workloads that rely on a different default route (e.g. NAT Gateway) will break. |
+| **Azure** | Creates a **new** route table with `0.0.0.0/0 → CE SLI IP` (VirtualAppliance) and associates it with the inside subnet, **replacing** any existing route table association | **High if shared** — the previous route table is detached. Existing workloads lose all custom routes from the old table. |
+
+### Recommendations
+
+- **Use greenfield mode when possible.** If you don't have existing networking requirements, let Terraform create everything — this is the safest option.
+- **Use dedicated SLI subnets for brownfield.** If deploying into existing infrastructure, create a subnet specifically for the CE's inside interface and any workloads that should route through the mesh. Do not reuse a subnet that has existing production workloads with their own routing.
+- **Review `terraform plan` carefully.** Before running `terraform apply`, check the plan output for route table changes. Terraform will show you exactly which route table will be modified (AWS) or replaced (Azure).
+- **SLO subnets are not modified in brownfield.** The CE modules do not change the outside subnet's route table. The SLO subnet must already have internet access (via Internet Gateway in AWS, or default Azure outbound routing).
 
 ### 5. What Happens After Apply
 

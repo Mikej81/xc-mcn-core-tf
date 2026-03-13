@@ -82,9 +82,13 @@ variable "aws_ce" {
   type = object({
     site_name             = string
     ssh_public_key        = string
-    vpc_id                = string
-    outside_subnet_id     = string
-    inside_subnet_id      = string
+    vpc_id                = optional(string, null)
+    outside_subnet_id     = optional(string, null)
+    inside_subnet_id      = optional(string, null)
+    vpc_cidr              = optional(string, "192.168.0.0/16")
+    outside_subnet_cidr   = optional(string, "192.168.1.0/24")
+    inside_subnet_cidr    = optional(string, "192.168.2.0/24")
+    az                    = optional(string, null)
     aws_region            = optional(string, "us-gov-west-1")
     aws_profile           = optional(string, null)
     ami_id                = optional(string, null)

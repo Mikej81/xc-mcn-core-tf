@@ -26,39 +26,48 @@ f5xc_api_p12_file = "./creds/tenant.console.ves.volterra.io.api-creds.p12"
 # }
 
 # AWS GovCloud CE (set to null or omit to skip)
+#
+# Greenfield (new VPC) — omit vpc_id, outside_subnet_id, inside_subnet_id:
 # aws_ce = {
-#   site_name            = "xc-ce-awsgov"
-#   ssh_public_key       = "ssh-rsa AAAA..."
-#   vpc_id               = "vpc-0123456789abcdef0"
-#   outside_subnet_id    = "subnet-0123456789abcdef0"
-#   inside_subnet_id     = "subnet-0123456789abcdef1"
-#   aws_region           = "us-gov-west-1"
-#   aws_profile          = "govcloud"
-#   s3_bucket_name       = "xc-ce-image-staging"
-#   instance_type        = "m5.2xlarge"
-#   disk_size_gb         = 128
-#   create_eip           = true
-#   deploy_test_vm       = true
-#   test_vm_remote_cidrs = ["192.168.2.0/24", "10.0.2.0/24"]
-#   tags = {
-#     owner       = "your-name"
-#     environment = "dev"
-#     project     = "xc-ce-aws-gov"
-#   }
+#   site_name      = "xc-ce-awsgov"
+#   ssh_public_key = "ssh-rsa AAAA..."
+#   aws_region     = "us-gov-west-1"
+#   aws_profile    = "govcloud"
+#   s3_bucket_name = "xc-ce-image-staging"
+#   segment_name   = "prod"
+# }
+#
+# Brownfield (existing VPC) — provide vpc_id and subnet IDs:
+# aws_ce = {
+#   site_name         = "xc-ce-awsgov"
+#   ssh_public_key    = "ssh-rsa AAAA..."
+#   vpc_id            = "vpc-0123456789abcdef0"
+#   outside_subnet_id = "subnet-0123456789abcdef0"
+#   inside_subnet_id  = "subnet-0123456789abcdef1"
+#   aws_region        = "us-gov-west-1"
+#   aws_profile       = "govcloud"
+#   s3_bucket_name    = "xc-ce-image-staging"
+#   segment_name      = "prod"
+#   deploy_test_vm    = true
+#   test_vm_remote_cidrs = ["10.0.2.0/24"]
 # }
 
 # Azure GovCloud CE (set to null or omit to skip)
+#
+# Greenfield (new VNet) — omit resource_group_name, vnet_name, subnet names:
 # azure_ce = {
-#   site_name        = "xc-ce-azgov"
-#   ssh_public_key   = "ssh-rsa AAAA..."
-#   location         = "usgovvirginia"
-#   instance_type    = "Standard_D8s_v4"
-#   os_disk_size_gb  = 128
-#   create_public_ip = true
-#   deploy_test_vm   = true
-#   tags = {
-#     owner       = "your-name"
-#     environment = "dev"
-#     project     = "xc-ce-azure-gov"
-#   }
+#   site_name      = "xc-ce-azgov"
+#   ssh_public_key = "ssh-rsa AAAA..."
+#   segment_name   = "prod"
+# }
+#
+# Brownfield (existing VNet) — provide resource group, VNet, and subnet names:
+# azure_ce = {
+#   site_name           = "xc-ce-azgov"
+#   ssh_public_key      = "ssh-rsa AAAA..."
+#   resource_group_name = "my-existing-rg"
+#   vnet_name           = "my-existing-vnet"
+#   outside_subnet_name = "slo-subnet"
+#   inside_subnet_name  = "sli-subnet"
+#   segment_name        = "prod"
 # }

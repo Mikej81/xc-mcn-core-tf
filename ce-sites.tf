@@ -15,6 +15,10 @@ module "aws_ce" {
   vpc_id                = var.aws_ce.vpc_id
   outside_subnet_id     = var.aws_ce.outside_subnet_id
   inside_subnet_id      = var.aws_ce.inside_subnet_id
+  vpc_cidr              = var.aws_ce.vpc_cidr
+  outside_subnet_cidr   = var.aws_ce.outside_subnet_cidr
+  inside_subnet_cidr    = var.aws_ce.inside_subnet_cidr
+  az                    = var.aws_ce.az
   aws_region            = var.aws_ce.aws_region
   aws_profile           = var.aws_ce.aws_profile
   ami_id                = var.aws_ce.ami_id
