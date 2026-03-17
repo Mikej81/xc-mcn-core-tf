@@ -4,8 +4,8 @@
 
 module "aws_ce" {
   count  = var.aws_ce != null ? 1 : 0
-  # source = "git::https://github.com/Mikej81/xc-ce-aws-gov-tf.git?ref=main"
-  source = "../xc-ce-aws-gov-tf"
+  source = "git::https://github.com/Mikej81/xc-ce-aws-gov-tf.git?ref=main"
+  # source = "../xc-ce-aws-gov-tf"
 
   f5xc_api_url      = var.f5xc_api_url
   f5xc_api_p12_file = var.f5xc_api_p12_file
@@ -38,6 +38,7 @@ module "aws_ce" {
   test_vm_private_ip    = var.aws_ce.test_vm_private_ip
   test_vm_remote_cidrs  = var.aws_ce.test_vm_remote_cidrs
   segment_name          = var.aws_ce.segment_name
+  primary_re            = var.aws_ce.primary_re
   tags                  = var.aws_ce.tags
 
   # MCN integration — from core config
@@ -57,8 +58,8 @@ module "aws_ce" {
 
 module "azure_ce" {
   count  = var.azure_ce != null ? 1 : 0
-  # source = "git::https://github.com/Mikej81/xc-ce-azure-gov-tf.git?ref=main"
-  source = "../xc-ce-azure-gov-tf"
+  source = "git::https://github.com/Mikej81/xc-ce-azure-gov-tf.git?ref=main"
+  # source = "../xc-ce-azure-gov-tf"
 
   f5xc_api_url      = var.f5xc_api_url
   f5xc_api_p12_file = var.f5xc_api_p12_file
@@ -91,6 +92,7 @@ module "azure_ce" {
   test_vm_size               = var.azure_ce.test_vm_size
   test_vm_remote_cidrs       = var.azure_ce.test_vm_remote_cidrs
   segment_name               = var.azure_ce.segment_name
+  primary_re                 = var.azure_ce.primary_re
   tags                       = var.azure_ce.tags
 
   # MCN integration — from core config

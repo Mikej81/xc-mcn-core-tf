@@ -106,6 +106,7 @@ variable "aws_ce" {
     test_vm_private_ip    = optional(string, null)
     test_vm_remote_cidrs  = optional(list(string), [])
     segment_name          = optional(string, null)
+    primary_re            = optional(string, null)
     tags                  = optional(map(string), {})
   })
   default     = null
@@ -145,6 +146,7 @@ variable "azure_ce" {
     test_vm_size               = optional(string, "Standard_B2s")
     test_vm_remote_cidrs       = optional(list(string), [])
     segment_name               = optional(string, null)
+    primary_re                 = optional(string, null)
     tags                       = optional(map(string), {})
   })
   default     = null
